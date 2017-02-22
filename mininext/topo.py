@@ -17,7 +17,7 @@ class Topo(BaseTopo):
         BaseTopo.__init__(self, **opts)
 
     # Override addHost so that constructor defaults to MiniNExT host
-    def addHost(self, name, cls=Host, **opts):
+    def addHost(self, name, **opts):
         """Adds a host using the MiniNExT host constructor.
            name: host name
            cls: host constructor
@@ -25,7 +25,8 @@ class Topo(BaseTopo):
            returns: host name"""
         if not opts and self.hopts:
             opts = self.hopts
-        return BaseTopo.addNode(self, name, cls=cls, **opts)
+        opts['cls'] = Host
+        return BaseTopo.addNode(self, name, **opts)
 
     # Configure a loopback interface
     def addNodeLoopbackIntf(self, node, ip, loNum=None, **opts):

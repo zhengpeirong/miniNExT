@@ -6,6 +6,8 @@ import signal
 import select
 import shutil
 import tempfile
+import pty
+import os
 from subprocess import Popen, PIPE, STDOUT
 
 from mininet.node import Node as BaseNode
@@ -50,7 +52,7 @@ class Node(BaseNode):
         self.loIntfs = {}
 
         # Request initialization of the BaseNode
-        BaseNode.__init__(self, name, **params)
+        BaseNode.__init__(self, name, inUTSNamespace, **params)
 
     # Overrides to support additional extensions #
 
@@ -75,11 +77,13 @@ class Node(BaseNode):
             opts += 'u'
         # bash -m: enable job control
         # -s: pass $* to shell, and make process easy to find in ps
-        cmd = ['mxexec', opts, 'bash', '-ms', 'mininet:' + self.name]
-        self.shell = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=STDOUT,
+        cmd = [ 'mxexec', opts, 'env', 'PS1=' + chr( 127 ),
+                'bash', '--norc', '-is', 'mininet:' + self.name ]
+        master, slave = pty.openpty()
+        self.shell = Popen(cmd, stdin=slave, stdout=slave, stderr=slave,
                            close_fds=True)
-        self.stdin = self.shell.stdin
-        self.stdout = self.shell.stdout
+        self.stdin = os.fdopen( master, 'rw')
+        self.stdout = self.stdin
         self.pid = self.shell.pid
         self.pollOut = select.poll()
         self.pollOut.register(self.stdout)
@@ -92,17 +96,25 @@ class Node(BaseNode):
         self.lastCmd = None
         self.lastPid = None
         self.readbuf = ''
-        self.waiting = False
-
         # If this node has a private PID space, grab the PID to attach to
         # Otherwise, we use the same PID as the shell's PID
         if self.inPIDNamespace:
             # monitor() will grab shell's true PID and put in self.lastPid
-            self.monitor()
+            self.monitor(1000)
             if self.lastPid is None:
                 raise Exception('Unable to determine shell\'s PID')
             self.pid = self.lastPid
             self.lastPid = None
+        # Wait for prompt
+        while True:
+            data = self.read( 1024 )
+            if data[ -1 ] == chr( 127 ):
+                break
+            self.pollOut.poll()
+        self.waiting = False
+        self.cmd( 'stty -echo' )
+        self.cmd( 'set +m' )
+
 
     # Override on popen() to support mount and PID namespaces
     def popen(self, *args, **kwargs):
@@ -440,5 +452,3 @@ class Node(BaseNode):
 
 class Host(Node):
 
-    "MiniNExT enabled host"
-    pass

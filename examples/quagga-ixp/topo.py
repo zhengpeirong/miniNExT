@@ -17,12 +17,10 @@ class QuaggaTopo(Topo):
 
     "Creates a topology of Quagga routers"
 
-    def __init__(self):
+    def build(self):
         """Initialize a Quagga topology with 5 routers, configure their IP
            addresses, loop back interfaces, and paths to their private
            configuration directories."""
-        Topo.__init__(self)
-
         # Directory where this file / script is located"
         selfPath = os.path.dirname(os.path.abspath(
             inspect.getfile(inspect.currentframe())))  # script directory
@@ -74,4 +72,4 @@ class QuaggaTopo(Topo):
                                 nodeConfig=quaggaSvcConfig)
 
             # Attach the quaggaContainer to the IXP Fabric Switch
-            self.addLink(quaggaContainer, ixpfabric)
+            self.addLink(quaggaContainer, ixpfabric, fast=False)
