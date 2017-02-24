@@ -451,4 +451,5 @@ class Node(BaseNode):
 
 
 class Host(Node):
-
+    "MiniNExT enabled host"
+    pass
