@@ -25,7 +25,8 @@ class Topo(BaseTopo):
            returns: host name"""
         if not opts and self.hopts:
             opts = self.hopts
-        opts['cls'] = Host
+        if 'cls' not in opts:
+            opts['cls'] = Host
         return BaseTopo.addNode(self, name, **opts)
 
     # Configure a loopback interface

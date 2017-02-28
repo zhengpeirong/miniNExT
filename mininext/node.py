@@ -81,7 +81,7 @@ class Node(BaseNode):
                 'bash', '--norc', '-is', 'mininet:' + self.name ]
         master, slave = pty.openpty()
         self.shell = Popen(cmd, stdin=slave, stdout=slave, stderr=slave,
-                           close_fds=True)
+                           close_fds=False)
         self.stdin = os.fdopen( master, 'rw')
         self.stdout = self.stdin
         self.pid = self.shell.pid
@@ -112,9 +112,8 @@ class Node(BaseNode):
                 break
             self.pollOut.poll()
         self.waiting = False
-        self.cmd( 'stty -echo' )
-        self.cmd( 'set +m' )
-
+        # +m: disable job control notification
+        self.cmd( 'unset HISTFILE; stty -echo; set +m' )
 
     # Override on popen() to support mount and PID namespaces
     def popen(self, *args, **kwargs):

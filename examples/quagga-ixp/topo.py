@@ -72,4 +72,8 @@ class QuaggaTopo(Topo):
                                 nodeConfig=quaggaSvcConfig)
 
             # Attach the quaggaContainer to the IXP Fabric Switch
+            # NOTE: needs the fast=False parameter to work on mininet > 2.2
+            # The fast path in mininet passes namens to ip instead of
+            # bringing up the interfaces and moving them to namespaces.
+            # That approach fails when processes are in separate PID ns
             self.addLink(quaggaContainer, ixpfabric, fast=False)
